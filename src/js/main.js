@@ -52,14 +52,17 @@ window.onload = () => {
 
     function scroll(e) {
       let rect = img.getClientRects()[0]
-      if (e.deltaY >= 0 && matrix.M11 > 0.05) {
+      let scale = matrix.M11
+      if (e.deltaY >= 0 && matrix.M11 > 0.2) {
         matrix.M11 = matrix.M22 -= rate * matrix.M22
-        matrix.M31 = Math.max (1, matrix.M31 * (1 - rate))
-        matrix.M32 = Math.max (1, matrix.M32 * (1 - rate))
-      } else if (e.deltaY < 0) {
-        let scale = matrix.M11
-        matrix.M11= matrix.M22 += rate * matrix.M11
-        // if (rect.width > document.body.clientWidth || rect.height > document.body.clientHeight) {
+        if (rect.width < document.body.clientWidth || rect.height < document.body.clientHeight) {
+          matrix.M31 = Math.max(1, matrix.M31 - matrix.M31 / 3)
+          matrix.M32 = Math.max(1, matrix.M32 - matrix.M32 / 3)
+          pos = {
+            x: matrix.M31 - img.width * (matrix.M11 - 1) / 2,
+            y: matrix.M31 - img.height * (matrix.M11 - 1) / 2
+          }
+        } else {
           let point = {
             x: e.clientX - img.offsetLeft,
             y: e.clientY - img.offsetTop
@@ -74,6 +77,24 @@ window.onload = () => {
           }
           matrix.M31 = pos.x + img.width * (matrix.M11 - 1) / 2
           matrix.M32 = pos.y + img.height * (matrix.M11 - 1) / 2
+        }
+      } else if (e.deltaY < 0) {
+        matrix.M11 = matrix.M22 += rate * matrix.M11
+        // if (rect.width > document.body.clientWidth || rect.height > document.body.clientHeight) {
+        let point = {
+          x: e.clientX - img.offsetLeft,
+          y: e.clientY - img.offsetTop
+        }
+        let zoom_point = {
+          x: (point.x - pos.x) / scale,
+          y: (point.y - pos.y) / scale
+        }
+        pos = {
+          x: point.x - zoom_point.x * matrix.M11,
+          y: point.y - zoom_point.y * matrix.M11
+        }
+        matrix.M31 = pos.x + img.width * (matrix.M11 - 1) / 2
+        matrix.M32 = pos.y + img.height * (matrix.M11 - 1) / 2
         // }
       }
       img.style.transform = `matrix(${matrix.M11},${matrix.M12},${matrix.M21},${matrix.M22},${matrix.M31},${matrix.M32})`
@@ -104,6 +125,14 @@ window.onload = () => {
     pos.y = zoom_point.y - zoom_target.y * scale
     var x = pos.x + img.width * (scale - 1) / 2
     var y = pos.y + img.height * (scale - 1) / 2
+    if (pos.x > 0)
+      pos.x = 0
+    if (pos.x + size.w * scale < size.w)
+      pos.x = -size.w * (scale - 1)
+    if (pos.y > 0)
+      pos.y = 0
+    if (pos.y + size.h * scale < size.h)
+      pos.y = -size.h * (scale - 1)
     img.style.transform = `matrix(${scale},${0},${0},${scale},${x},${y})`
   }
 }
